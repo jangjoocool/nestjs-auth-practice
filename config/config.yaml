@@ -1,0 +1,16 @@
+server:
+  port: 3000
+  
+db:
+  port: 3306
+  database: 'test'
+  host: 'localhost'
+  username: 'root'
+  password: 'test'
+  synchronize: true
+
+jwt:
+  access_secret: 'accessTest'
+  access_expiresIn: '60s'
+  refresh_secret: 'refreshTest'
+  refresh_expiresIn: '7d'
