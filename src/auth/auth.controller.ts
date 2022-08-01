@@ -1,8 +1,6 @@
 import { Body, Controller, Get, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
-import { GetUserAddress } from 'src/common/get-user-address.decorator';
-import { GetCurrentUser } from 'src/common/get-user.decorator';
 import { AuthRequest, AuthResponse } from './auth.dto';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -16,8 +14,17 @@ export class AuthController {
 
     @UseGuards(LocalAuthGuard)
     @Post('login')
-    async login(@Body() authRequest: AuthRequest, @Req() req) {
-        return this.authService.login(req.user);
+    async login(
+        @Body() authRequest: AuthRequest,
+        @Req() req,
+        @Res({ passthrough: true }) res) {
+
+        const tokens =  await this.authService.login(req.user);
+        res.cookie('Refresh', tokens.refreshToken, {
+            httpOnly: true,
+        });
+
+        return tokens;
     }
 
     @ApiBearerAuth('access-token')
@@ -27,12 +34,11 @@ export class AuthController {
         return address.toLocaleLowerCase() === req.user.address.toLocaleLowerCase();
     }
 
-    @ApiBearerAuth('refresh-token')
     @UseGuards(JwtRefreshGuard)
     @Get('refresh')
-    async refreshToken(@Req() req): Promise<AuthResponse> {
+    async refreshToken(@Req() req) {
         const user = req.user;
-        return this.authService.refreshTokens(user.address, user.refreshToken);
+        return this.authService.refreshTokens(user.address, user.currentHashedRefreshToken);
     }
     
 }
